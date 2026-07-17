@@ -46,7 +46,8 @@
   .eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--y);
     box-shadow:0 0 12px 2px var(--y-glow);animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-  @keyframes cineIn{from{opacity:0;transform:translateY(16px);filter:blur(5px)}to{opacity:1;transform:none;filter:blur(0)}}
+  @keyframes cineIn{0%{opacity:0;transform:translateY(38px) scale(.94);filter:blur(9px)}
+    60%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
   .hero-copy .rw{display:inline-block}
 
   .btn{display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;
@@ -525,11 +526,12 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
     if(!el)return;
     if(RM){el.style.opacity='1';return;}
     el.style.opacity='0';
-    el.style.animation='cineIn '+(dur||.85)+'s cubic-bezier(.22,1,.36,1) '+delay+'s both';
+    el.style.willChange='transform,opacity,filter';
+    el.style.animation='cineIn '+(dur||1.1)+'s cubic-bezier(.16,.84,.24,1) '+delay+'s both';
   }
 
-  const EYEBROW_START=2.2, H1_START=2.6, STEP=.09;
-  cine(eyebrow,EYEBROW_START);
+  const EYEBROW_START=2.2, H1_START=2.7, STEP=.16;
+  cine(eyebrow,EYEBROW_START,1.1);
 
   let count=0;
   const nodes=[...h1.childNodes];
@@ -541,20 +543,20 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
         if(/^\s+$/.test(p)){frag.appendChild(document.createTextNode(p));return;}
         const span=document.createElement('span');
         span.className='rw';span.textContent=p;
-        cine(span,H1_START+count*STEP,.6);
+        cine(span,H1_START+count*STEP,.85);
         count++;frag.appendChild(span);
       });
     }else{
-      cine(node,H1_START+count*STEP,.6);
+      cine(node,H1_START+count*STEP,.85);
       count++;frag.appendChild(node);
     }
   });
   h1.innerHTML='';h1.appendChild(frag);
 
-  const afterH1=H1_START+count*STEP+.6+.25;
-  cine(lead,afterH1);
-  cine(ctaRow,afterH1+.45);
-  cine(metrics,afterH1+.8);
+  const afterH1=H1_START+count*STEP+.85+.35;
+  cine(lead,afterH1,1.1);
+  cine(ctaRow,afterH1+.5,1.1);
+  cine(metrics,afterH1+.9,1.1);
 })();
 
 /* ---------- typing chat ---------- */
