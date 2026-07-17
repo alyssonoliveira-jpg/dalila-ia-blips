@@ -493,6 +493,7 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
     {t:'sys',x:'transbordo → vendedor · card aberto'}
   ];
   let timers=[];
+  const LOOP_MS=40000;
   function typing(){const el=document.createElement('div');el.className='typing';
     el.innerHTML='<i></i><i></i><i></i>';body.appendChild(el);return el;}
   function run(){
@@ -511,6 +512,8 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
     timers.push(setTimeout(()=>{const b=document.createElement('button');
       b.className='replay';b.textContent='↺ repetir conversa';b.onclick=run;body.appendChild(b);
       body.scrollTop=body.scrollHeight;},delay+300));
+    // repete a conversa automaticamente a cada 40s (a partir do início desta rodada)
+    timers.push(setTimeout(run,Math.max(LOOP_MS,delay+1000)));
   }
   function add(m){const el=document.createElement('div');el.className='msg '+m.t;el.textContent=m.x;
     body.appendChild(el);body.scrollTop=body.scrollHeight;}
