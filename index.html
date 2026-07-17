@@ -1,0 +1,656 @@
+<title>Dalila · IA — Central de Comando Comercial</title>
+<style>
+  :root{
+    --bg:#07070a;
+    --bg2:#0c0c11;
+    --panel:rgba(255,255,255,.03);
+    --panel-brd:rgba(255,255,255,.08);
+    --ink:#f4f4f6;
+    --muted:#9a9aa4;
+    --faint:#63636e;
+    --y:#FCBA28;
+    --y-soft:rgba(252,186,40,.14);
+    --y-glow:rgba(252,186,40,.5);
+    --ok:#35d07f;
+    --grid:rgba(255,255,255,.04);
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+    --disp:"Space Grotesk","Quicksand",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:var(--disp);font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance}
+  p{margin:0}a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative;z-index:2}
+
+  /* animated backdrops */
+  #neural{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:52px 52px;mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%);opacity:.6}
+  .glow-blob{position:fixed;border-radius:50%;filter:blur(90px);z-index:0;pointer-events:none;opacity:.5}
+  .blob-a{top:-140px;left:50%;transform:translateX(-50%);width:640px;height:420px;
+    background:radial-gradient(circle,var(--y-glow),transparent 65%);opacity:.28}
+
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--y);display:inline-flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--y);
+    box-shadow:0 0 12px 2px var(--y-glow);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;
+    padding:13px 24px;border-radius:12px;cursor:pointer;border:1px solid transparent;
+    transition:transform .18s,box-shadow .25s,background .2s,border-color .2s;position:relative}
+  .btn-y{background:var(--y);color:#000;box-shadow:0 0 0 rgba(252,186,40,0)}
+  .btn-y:hover{transform:translateY(-2px);box-shadow:0 10px 30px -6px var(--y-glow)}
+  .btn-out{border-color:var(--panel-brd);color:var(--ink);background:var(--panel)}
+  .btn-out:hover{border-color:var(--y);color:var(--y)}
+  .btn .ar{transition:transform .2s}.btn:hover .ar{transform:translateX(4px)}
+
+  /* NAV */
+  header.nav{position:fixed;top:0;left:0;right:0;z-index:60;
+    background:rgba(7,7,10,.55);backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s,background .3s}
+  header.nav.scrolled{border-bottom-color:var(--panel-brd);background:rgba(7,7,10,.8)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand svg{height:24px}
+  .brand .div{width:1px;height:20px;background:var(--panel-brd)}
+  .brand b{font-family:var(--disp);font-weight:700;font-size:16px}
+  .brand b i{color:var(--y);font-style:normal}
+  nav.links{display:flex;gap:30px}
+  nav.links a{font-size:13.5px;color:var(--muted);font-weight:500;position:relative}
+  nav.links a::after{content:"";position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--y);transition:width .25s}
+  nav.links a:hover{color:var(--ink)}nav.links a:hover::after{width:100%}
+  @media(max-width:860px){nav.links{display:none}}
+
+  /* HERO */
+  .hero{min-height:100vh;display:flex;align-items:center;padding:120px 0 60px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center;width:100%}
+  .hero h1{font-size:clamp(38px,6vw,68px);line-height:1.02;margin:22px 0}
+  .hero h1 .grad{background:linear-gradient(120deg,var(--y),#ffe08a 55%,var(--y));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{font-size:19px;color:var(--muted);max-width:40ch}
+  .cta-row{margin-top:34px;display:flex;gap:14px;flex-wrap:wrap}
+  .metrics{margin-top:44px;display:flex;gap:34px;flex-wrap:wrap}
+  .metric .n{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--ink);line-height:1;
+    display:flex;align-items:baseline;gap:2px}
+  .metric .n span{color:var(--y)}
+  .metric .l{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--faint);
+    text-transform:uppercase;margin-top:7px}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:36px}.hero{min-height:auto}}
+
+  /* terminal chat */
+  .term{background:linear-gradient(180deg,rgba(20,20,26,.9),rgba(12,12,17,.9));
+    border:1px solid var(--panel-brd);border-radius:18px;overflow:hidden;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(252,186,40,.06);
+    backdrop-filter:blur(8px)}
+  .term-bar{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--panel-brd);
+    background:rgba(255,255,255,.02)}
+  .term-bar .dots{display:flex;gap:6px}
+  .term-bar .dots i{width:11px;height:11px;border-radius:50%;background:#2a2a31;display:block}
+  .term-bar .dots i:first-child{background:#ff5f57}.term-bar .dots i:nth-child(2){background:#febc2e}.term-bar .dots i:nth-child(3){background:#28c840}
+  .term-bar .name{font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:6px}
+  .term-bar .live{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ok);display:flex;align-items:center;gap:6px}
+  .term-bar .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 1.6s infinite}
+  .term-body{padding:18px;min-height:340px;display:flex;flex-direction:column;gap:11px}
+  .msg{max-width:84%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;
+    opacity:0;transform:translateY(8px);animation:msgin .4s forwards}
+  @keyframes msgin{to{opacity:1;transform:none}}
+  .msg.them{align-self:flex-start;background:rgba(255,255,255,.05);border:1px solid var(--panel-brd);border-bottom-left-radius:5px}
+  .msg.me{align-self:flex-end;background:var(--y);color:#000;font-weight:500;border-bottom-right-radius:5px}
+  .msg.sys{align-self:center;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--y);
+    background:var(--y-soft);border:1px solid rgba(252,186,40,.25);padding:5px 12px;border-radius:999px;max-width:none}
+  .typing{align-self:flex-start;display:flex;gap:4px;padding:12px 15px;background:rgba(255,255,255,.05);
+    border:1px solid var(--panel-brd);border-radius:14px;border-bottom-left-radius:5px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  .replay{margin-top:6px;align-self:center;font-family:var(--mono);font-size:11px;color:var(--faint);
+    border:1px solid var(--panel-brd);background:transparent;padding:5px 12px;border-radius:8px;cursor:pointer}
+  .replay:hover{color:var(--y);border-color:var(--y)}
+
+  /* generic section */
+  section{padding:110px 0;position:relative}
+  .sec-head{max-width:680px;margin:0 auto 60px;text-align:center}
+  .sec-head h2{font-size:clamp(28px,4vw,46px);margin:16px 0;line-height:1.1}
+  .sec-head p{color:var(--muted);font-size:17px}
+
+  /* ticker */
+  .ticker-wrap{border-block:1px solid var(--panel-brd);background:rgba(255,255,255,.015);
+    padding:16px 0;overflow:hidden;white-space:nowrap;position:relative;z-index:2}
+  .ticker{display:inline-flex;gap:46px;animation:scroll 32s linear infinite}
+  .ticker span{font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:var(--faint);
+    display:inline-flex;align-items:center;gap:10px}
+  .ticker span b{color:var(--y)}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* ORCHESTRATION */
+  .orch-grid{display:grid;grid-template-columns:1fr 360px;gap:40px;align-items:center}
+  .orch-stage{position:relative;aspect-ratio:1/.82;width:100%}
+  .orch-stage svg{width:100%;height:100%;overflow:visible}
+  .node-hit{cursor:pointer}
+  .info-card{background:var(--panel);border:1px solid var(--panel-brd);border-radius:18px;padding:26px;
+    backdrop-filter:blur(6px);min-height:250px}
+  .info-card .role{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--y)}
+  .info-card h3{font-size:24px;margin:10px 0 12px}
+  .info-card p{color:var(--muted);font-size:15px}
+  .info-card .hint{margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .node-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+  .node-legend button{font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:999px;
+    border:1px solid var(--panel-brd);background:transparent;color:var(--muted);cursor:pointer;transition:.2s}
+  .node-legend button:hover,.node-legend button.on{border-color:var(--y);color:var(--y);background:var(--y-soft)}
+  @media(max-width:880px){.orch-grid{grid-template-columns:1fr;gap:28px}}
+
+  /* CAPABILITIES bento */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;grid-auto-rows:minmax(150px,auto)}
+  .cell{background:var(--panel);border:1px solid var(--panel-brd);border-radius:18px;padding:24px;
+    position:relative;overflow:hidden;transition:transform .25s,border-color .25s;cursor:default}
+  .cell::before{content:"";position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),var(--y-soft),transparent 40%);
+    opacity:0;transition:opacity .3s}
+  .cell:hover{transform:translateY(-4px);border-color:rgba(252,186,40,.35)}
+  .cell:hover::before{opacity:1}
+  .cell .ic{width:44px;height:44px;border-radius:11px;background:var(--y-soft);border:1px solid rgba(252,186,40,.25);
+    display:grid;place-items:center;margin-bottom:16px}
+  .cell .ic svg{width:22px;height:22px;stroke:var(--y);fill:none;stroke-width:1.7}
+  .cell h3{font-size:17px;margin-bottom:7px}.cell p{color:var(--muted);font-size:14px}
+  .cell.wide{grid-column:span 2}.cell.tall{grid-row:span 2}
+  .cell .big{font-family:var(--disp);font-weight:700;font-size:clamp(34px,5vw,54px);color:var(--y);line-height:1}
+  @media(max-width:900px){.bento{grid-template-columns:repeat(2,1fr)}.cell.wide{grid-column:span 2}}
+  @media(max-width:560px){.bento{grid-template-columns:1fr}.cell.wide,.cell.tall{grid-column:auto;grid-row:auto}}
+
+  /* SCORE SIMULATOR */
+  .sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;
+    background:var(--panel);border:1px solid var(--panel-brd);border-radius:24px;padding:40px}
+  .crit{display:flex;flex-direction:column;gap:12px}
+  .crit .row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;
+    border:1px solid var(--panel-brd);background:rgba(255,255,255,.02);cursor:pointer;transition:.2s;user-select:none}
+  .crit .row:hover{border-color:rgba(252,186,40,.4)}
+  .crit .row.on{background:var(--y-soft);border-color:var(--y)}
+  .crit .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--faint);flex:0 0 auto;
+    display:grid;place-items:center;transition:.2s}
+  .crit .row.on .box{background:var(--y);border-color:var(--y)}
+  .crit .box svg{width:13px;height:13px;stroke:#000;stroke-width:3;fill:none;opacity:0;transition:.2s}
+  .crit .row.on .box svg{opacity:1}
+  .crit .row .t{font-size:14.5px;font-weight:500}
+  .crit .row .t small{display:block;color:var(--faint);font-weight:400;font-size:12px}
+  .gauge-wrap{text-align:center}
+  .gauge{position:relative;width:220px;height:220px;margin:0 auto}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .val .num{font-family:var(--disp);font-weight:700;font-size:58px;line-height:1;color:var(--y)}
+  .gauge .val .den{font-family:var(--mono);font-size:13px;color:var(--faint)}
+  .verdict{margin-top:22px}
+  .verdict .cls{font-family:var(--disp);font-weight:700;font-size:24px}
+  .verdict .act{margin-top:8px;font-family:var(--mono);font-size:12.5px;color:var(--muted);
+    border:1px solid var(--panel-brd);border-radius:10px;padding:10px 14px;display:inline-block}
+  @media(max-width:820px){.sim-grid{grid-template-columns:1fr;gap:32px;padding:28px}}
+
+  /* STEPS timeline */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative}
+  .flow::before{content:"";position:absolute;top:26px;left:8%;right:8%;height:2px;
+    background:linear-gradient(90deg,transparent,var(--y),var(--y),transparent);opacity:.4}
+  .fstep{text-align:center;padding:0 14px;position:relative}
+  .fstep .dot{width:54px;height:54px;border-radius:50%;margin:0 auto 20px;position:relative;z-index:2;
+    background:var(--bg2);border:2px solid var(--y);display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;color:var(--y);box-shadow:0 0 20px -4px var(--y-glow)}
+  .fstep h3{font-size:16px;margin-bottom:8px}.fstep p{color:var(--muted);font-size:13.5px}
+  @media(max-width:760px){.flow{grid-template-columns:1fr;gap:34px}.flow::before{display:none}}
+
+  /* CTA */
+  .cta{position:relative;border:1px solid rgba(252,186,40,.3);border-radius:28px;padding:64px 40px;text-align:center;
+    background:radial-gradient(ellipse at 50% 0%,var(--y-soft),transparent 70%);overflow:hidden}
+  .cta h2{font-size:clamp(28px,4.5vw,50px);margin-bottom:16px}
+  .cta h2 .grad{background:linear-gradient(120deg,var(--y),#ffe08a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cta p{color:var(--muted);max-width:52ch;margin:0 auto 30px;font-size:17px}
+
+  footer{border-top:1px solid var(--panel-brd);padding:48px 0 34px;position:relative;z-index:2}
+  .foot-top{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:center}
+  .foot-top svg{height:22px}
+  .foot-top .cols{display:flex;gap:40px;font-family:var(--mono);font-size:12.5px}
+  .foot-top a{color:var(--muted)}.foot-top a:hover{color:var(--y)}
+  .foot-bottom{margin-top:34px;padding-top:22px;border-top:1px solid var(--panel-brd);
+    font-family:var(--mono);font-size:11.5px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+
+<canvas id="neural"></canvas>
+<div class="bg-grid"></div>
+<div class="glow-blob blob-a"></div>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <div class="brand">
+      <svg viewBox="0 0 926 926" aria-label="Blips"><path fill="#FCBA28" fill-rule="evenodd" d="M413 1.076C409.425 1.533 401.55 2.406 395.5 3.016 389.45 3.627 381.8 4.569 378.5 5.111 361.656 7.877 360.499 8.098 347.25 11.063 340.578 12.557 328.169 15.723 324 16.995 322.625 17.415 318.125 18.768 314 20.001 306.803 22.153 302.865 23.496 290.25 28.097 280.015 31.831 275.267 33.77 263.5 39.02 247.11 46.332 223.065 58.996 215.846 64.117 214.386 65.153 212.91 66 212.566 66 211.781 66 189.304 81.033 183.109 85.701 180.574 87.612 177.184 90.148 175.575 91.337 147.391 112.178 112.137 147.705 89.082 178.5 81.853 188.156 64 214.541 64 215.569 64 215.911 63.169 217.386 62.153 218.846 58.238 224.471 44.819 250.151 39.604 262 38.03 265.575 35.89 270.411 34.848 272.747 30.439 282.627 25.572 296.098 19.039 316.5 18.511 318.15 17.386 322.087 16.539 325.25 15.693 328.413 14.363 333.363 13.585 336.25 10.263 348.578 5.738 372.137 3.934 386.5 1.246 407.908.582 419.698.61 445.5.643 475.708 2.247 497.482 5.969 518.25 6.536 521.412 7.424 526.362 7.943 529.25 11.568 549.443 21.723 586.439 26.951 598.5 27.428 599.6 29.472 604.775 31.494 610 36.619 623.247 48.492 648.443 55.761 661.5 85.43 714.795 129.894 765.635 179.103 802.529 189.735 810.5 209.515 824 210.562 824 210.908 824 212.386 824.847 213.846 825.883 215.306 826.919 218.188 828.719 220.25 829.883 222.313 831.047 225.688 832.979 227.75 834.175 233.941 837.765 261.466 851.57 266.144 853.431 268.54 854.384 272.075 855.848 274 856.684 293.256 865.046 321.681 874.28 344 879.425 361.55 883.47 378.659 886.347 402 889.177 416.226 890.902 476.926 890.891 491 889.161 520.701 885.51 540.964 881.739 562.5 875.854 572.105 873.23 589.068 868.035 591.5 866.974 592.6 866.494 595.525 865.445 598 864.643 603.224 862.951 616.49 857.727 623 854.797 625.475 853.683 629.525 851.879 632 850.788 637.652 848.296 656.265 838.971 661.25 836.134 669.001 831.723 671.639 830.197 676.646 827.227 682.758 823.601 709.282 805.96 710 805.042 710.275 804.691 712.075 803.307 714 801.966 715.925 800.625 718.175 798.999 719 798.352 767.245 760.498 806.174 715.28 836.389 662 850.175 637.688 867.484 596.508 874.112 572.25 874.6 570.462 875.419 567.538 875.931 565.75 883.033 540.956 887.721 514.925 890.976 482.214 892.299 468.924 892.298 422.067 890.976 408.786 888.653 385.471 886.346 369.916 882.849 354 882.305 351.525 881.442 347.587 880.93 345.25 879.085 336.82 877.794 331.454 877.02 329 876.587 327.625 875.664 324.475 874.969 322 873.318 316.116 866.148 294.07 865.05 291.5 864.58 290.4 863.173 286.8 861.924 283.5 860.675 280.2 858.656 275.25 857.438 272.5 856.22 269.75 854.235 265.25 853.027 262.5 831.932 214.494 799.364 167.934 759.024 128.111 714.596 84.254 659.565 49.217 601.5 27.822 563.807 13.932 529.913 6.243 487 1.846 473.883.501 421.742-.041 413 1.076M260.5 141.402c-12.534 3.974-20.923 11.831-25.198 23.598-1.534 4.221-1.922 387.887-.402 397.066.495 2.989 1.439 8.809 2.099 12.934 11.717 73.247 72.379 142.628 145.177 166.044 5.111 1.644 11.606 3.3 23.324 5.947 16.556 3.741 41.824 5.397 60.541 3.969 15.171-1.158 33.587-3.89 39.959-5.928 1.375-.44 4.525-1.354 7-2.032 5.123-1.403 9.586-2.834 12.5-4.008 1.1-.443 3.9-1.514 6.222-2.38 48.559-18.099 98.239-66.565 119.537-116.612 6.385-15.006 11.475-32.359 13.639-46.5.589-3.85 1.528-9.962 2.087-13.582 3.019-19.571.279-60.877-5.461-82.328-10.235-38.245-27.945-68.212-58.004-98.147-38.296-38.138-81.132-57.918-135.192-62.428-17.617-1.469-51.576-1.243-58.399.389-15.824 3.785-25.81 14.373-28.965 30.711-2.295 11.884 2.083 25.71 11.036 34.855 9.29 9.489 15.819 10.948 49.201 10.994 14.135.02 28.085.495 31 1.055 12.756 2.453 16.738 3.406 23.799 5.698 38.947 12.642 74.172 47.137 86.833 85.033 2.825 8.456 3.645 11.475 6.31 23.25 1.713 7.567 1.668 40.472-.067 49.5-6.594 34.301-22.211 60.793-49.581 84.106-24.842 21.16-53.629 31.36-88.495 31.358-15.953-.001-24.933-1.237-42-5.783-28.38-7.558-61.316-33.659-78.759-62.415-4.626-7.626-10.241-19.141-10.241-21.003 0-.75-.358-1.79-.796-2.313-1.026-1.225-2.695-6.509-4.249-13.45-.677-3.025-1.717-7.075-2.311-9-.749-2.429-1.243-62.873-1.612-197.5L310.5 168.5l-2.23-5.5c-4.046-9.982-11.279-16.668-22.558-20.853-6.664-2.473-18.647-2.827-25.212-.745"/></svg>
+      <span class="div"></span><b>Dalila<i>.</i></b>
+    </div>
+    <nav class="links">
+      <a href="#sistema">Sistema</a>
+      <a href="#agentes">Agentes</a>
+      <a href="#capacidades">Capacidades</a>
+      <a href="#simulador">Simulador</a>
+      <a href="#fluxo">Fluxo</a>
+    </nav>
+    <a class="btn btn-y" href="#cta">Ver demo <span class="ar">→</span></a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Sistema multiagente · SDR de IA</span>
+      <h1>A vendedora de IA que <span class="grad">nunca dorme</span> e nunca perde um lead.</h1>
+      <p class="lead">A Dalila atende, investiga, analisa crédito, monta a condição comercial e transborda o lead qualificado — em segundos, dentro do WhatsApp, 24 horas por dia.</p>
+      <div class="cta-row">
+        <a class="btn btn-y" href="#simulador">Testar o lead score <span class="ar">→</span></a>
+        <a class="btn btn-out" href="#agentes">Ver os 4 agentes</a>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="n" data-count="4"><span>4</span></div><div class="l">agentes orquestrados</div></div>
+        <div class="metric"><div class="n"><span data-count="24">0</span>/<span data-count="7">0</span></div><div class="l">disponibilidade</div></div>
+        <div class="metric"><div class="n"><span data-count="12">0</span></div><div class="l">segmentos cobertos</div></div>
+        <div class="metric"><div class="n"><span data-count="100">0</span>%</div><div class="l">leads qualificados</div></div>
+      </div>
+    </div>
+
+    <div class="term reveal" id="term">
+      <div class="term-bar">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <span class="name">dalila@blips ~ atendimento</span>
+        <span class="live">ao vivo</span>
+      </div>
+      <div class="term-body" id="termBody"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker" id="ticker">
+    <span><b>◆</b> resposta em segundos</span><span><b>◆</b> lead score 0–5 automático</span>
+    <span><b>◆</b> análise de crédito</span><span><b>◆</b> condição comercial sob medida</span>
+    <span><b>◆</b> classificação N1 · N2 · N3</span><span><b>◆</b> transbordo inteligente</span>
+    <span><b>◆</b> especialista por segmento</span><span><b>◆</b> handoff com contexto</span>
+  </div>
+</div>
+
+<!-- ORCHESTRATION -->
+<section id="agentes">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Arquitetura</span>
+      <h2>Não é um chatbot. É uma orquestra de 4 agentes.</h2>
+      <p>Passe o mouse ou toque em cada nó para ver os dados fluírem pela Dalila. Cada agente é um especialista; a Orquestradora rege todos.</p>
+    </div>
+    <div class="orch-grid">
+      <div class="orch-stage">
+        <svg id="orch" viewBox="0 0 640 520"></svg>
+      </div>
+      <div>
+        <div class="info-card" id="agentInfo">
+          <div class="role" id="aiRole">Núcleo</div>
+          <h3 id="aiName">Dalila · Orquestradora</h3>
+          <p id="aiDesc">Rege a conversa inteira: decide qual agente acionar em cada etapa, mantém o contexto e executa o transbordo para o vendedor ou SDR humano no momento certo.</p>
+          <div class="hint">↖ clique nos nós para explorar cada agente</div>
+        </div>
+        <div class="node-legend" id="legend"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPABILITIES -->
+<section id="capacidades">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Capacidades</span>
+      <h2>Um time comercial inteiro em uma conversa.</h2>
+      <p>Cada bloco abaixo hoje consome horas de gente. A Dalila executa para cada lead, em paralelo, sem custo marginal.</p>
+    </div>
+    <div class="bento" id="bento">
+      <div class="cell tall reveal">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+        <div class="big">0–5</div>
+        <h3 style="margin-top:12px">Lead score automático</h3>
+        <p>Pontua contexto, estrutura, valor, prazo e documentos. Classifica em N1, N2 ou N3 e prioriza quem está perto do sim.</p>
+      </div>
+      <div class="cell wide reveal">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>Atende na hora, 24/7</h3>
+        <p>Nenhum lead fica em fila. Resposta no primeiro segundo, a qualquer hora, com tom próximo e humano.</p>
+      </div>
+      <div class="cell reveal">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <h3>Análise de crédito</h3>
+        <p>Checa CNPJ e condições, sinaliza pré-aprovação.</p>
+      </div>
+      <div class="cell reveal">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Condição comercial</h3>
+        <p>Monta entrada, parcelamento e plano sob medida.</p>
+      </div>
+      <div class="cell reveal">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+        <h3>Especialista por segmento</h3>
+        <p>Do artesanato ao food, o conhecimento certo para cada mercado.</p>
+      </div>
+      <div class="cell wide reveal">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M20 7h-9M14 17H5M17 3l3 4-3 4M7 21l-3-4 3-4"/></svg></div>
+        <h3>Transbordo inteligente com contexto</h3>
+        <p>Entrega ao vendedor certo um resumo completo — histórico, score e próximos passos — só quando o lead está pronto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMULATOR -->
+<section id="simulador">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Simulador interativo</span>
+      <h2>Veja o lead score da Dalila ao vivo.</h2>
+      <p>Marque o que a Dalila descobriu na conversa e veja a pontuação, a classificação e a rota mudarem em tempo real.</p>
+    </div>
+    <div class="sim-grid reveal">
+      <div class="crit" id="crit">
+        <div class="row" data-k="contexto"><div class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><div class="t">Contexto do negócio<small>Segmento e momento identificados</small></div></div>
+        <div class="row" data-k="estrutura"><div class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><div class="t">Estrutura montada<small>Já opera / tem ponto de trabalho</small></div></div>
+        <div class="row" data-k="valor"><div class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><div class="t">Capacidade de valor<small>Fit com o ticket dos equipamentos</small></div></div>
+        <div class="row" data-k="prazo"><div class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><div class="t">Prazo de decisão<small>Quer avançar agora</small></div></div>
+        <div class="row" data-k="docs"><div class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><div class="t">Documentos / crédito<small>CNPJ ativo e crédito viável</small></div></div>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge">
+          <svg width="220" height="220" viewBox="0 0 220 220">
+            <circle cx="110" cy="110" r="96" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="16"/>
+            <circle id="arc" cx="110" cy="110" r="96" fill="none" stroke="var(--y)" stroke-width="16"
+              stroke-linecap="round" stroke-dasharray="603" stroke-dashoffset="603"
+              style="transition:stroke-dashoffset .6s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 8px var(--y-glow))"/>
+          </svg>
+          <div class="val"><div class="num" id="scoreNum">0</div><div class="den">de 5 pontos</div></div>
+        </div>
+        <div class="verdict">
+          <div class="cls" id="scoreCls" style="color:var(--faint)">Sem qualificação</div>
+          <div class="act" id="scoreAct">Selecione critérios para simular</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOW -->
+<section id="fluxo">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Fluxo</span>
+      <h2>Do primeiro "oi" ao vendedor.</h2>
+    </div>
+    <div class="flow">
+      <div class="fstep reveal"><div class="dot">01</div><h3>Recebe e acolhe</h3><p>O lead chega no WhatsApp e a Dalila responde no mesmo instante.</p></div>
+      <div class="fstep reveal"><div class="dot">02</div><h3>Investiga</h3><p>Diagnóstico do negócio e coleta dos dados que alimentam o score.</p></div>
+      <div class="fstep reveal"><div class="dot">03</div><h3>Decide a rota</h3><p>Analisa crédito, monta condição e aplica as regras de transbordo.</p></div>
+      <div class="fstep reveal"><div class="dot">04</div><h3>Transfere</h3><p>Passa o lead pronto ao vendedor certo — ou segue nutrindo.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="wrap">
+    <div class="cta reveal">
+      <span class="eyebrow" style="justify-content:center">Demonstração</span>
+      <h2 style="margin-top:16px">Pronto para ver a <span class="grad">Dalila</span> em ação?</h2>
+      <p>Uma demo ao vivo mostra a conversa completa: do primeiro contato ao transbordo qualificado, com o lead score sendo calculado em tempo real.</p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-y" href="#simulador">Rodar o simulador <span class="ar">→</span></a>
+        <a class="btn btn-out" href="#agentes">Explorar a arquitetura</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="brand">
+        <svg viewBox="0 0 926 926" aria-label="Blips"><path fill="#FCBA28" d="M413 1.076C409.425 1.533 401.55 2.406 395.5 3.016 389.45 3.627 381.8 4.569 378.5 5.111 361.656 7.877 360.499 8.098 347.25 11.063 340.578 12.557 328.169 15.723 324 16.995 322.625 17.415 318.125 18.768 314 20.001 306.803 22.153 302.865 23.496 290.25 28.097 280.015 31.831 275.267 33.77 263.5 39.02 247.11 46.332 223.065 58.996 215.846 64.117 214.386 65.153 212.91 66 212.566 66 211.781 66 189.304 81.033 183.109 85.701 180.574 87.612 177.184 90.148 175.575 91.337 147.391 112.178 112.137 147.705 89.082 178.5 81.853 188.156 64 214.541 64 215.569 64 215.911 63.169 217.386 62.153 218.846 58.238 224.471 44.819 250.151 39.604 262 38.03 265.575 35.89 270.411 34.848 272.747 30.439 282.627 25.572 296.098 19.039 316.5 18.511 318.15 17.386 322.087 16.539 325.25 15.693 328.413 14.363 333.363 13.585 336.25 10.263 348.578 5.738 372.137 3.934 386.5 1.246 407.908.582 419.698.61 445.5.643 475.708 2.247 497.482 5.969 518.25 6.536 521.412 7.424 526.362 7.943 529.25 11.568 549.443 21.723 586.439 26.951 598.5 27.428 599.6 29.472 604.775 31.494 610 36.619 623.247 48.492 648.443 55.761 661.5 85.43 714.795 129.894 765.635 179.103 802.529 189.735 810.5 209.515 824 210.562 824 210.908 824 212.386 824.847 213.846 825.883 215.306 826.919 218.188 828.719 220.25 829.883 222.313 831.047 225.688 832.979 227.75 834.175 233.941 837.765 261.466 851.57 266.144 853.431 268.54 854.384 272.075 855.848 274 856.684 293.256 865.046 321.681 874.28 344 879.425 361.55 883.47 378.659 886.347 402 889.177 416.226 890.902 476.926 890.891 491 889.161 520.701 885.51 540.964 881.739 562.5 875.854 572.105 873.23 589.068 868.035 591.5 866.974 592.6 866.494 595.525 865.445 598 864.643 603.224 862.951 616.49 857.727 623 854.797 625.475 853.683 629.525 851.879 632 850.788 637.652 848.296 656.265 838.971 661.25 836.134 669.001 831.723 671.639 830.197 676.646 827.227 682.758 823.601 709.282 805.96 710 805.042 710.275 804.691 712.075 803.307 714 801.966 715.925 800.625 718.175 798.999 719 798.352 767.245 760.498 806.174 715.28 836.389 662 850.175 637.688 867.484 596.508 874.112 572.25 883.033 540.956 887.721 514.925 890.976 482.214 892.299 468.924 892.298 422.067 890.976 408.786 886.346 369.916 882.849 354 879.085 336.82 877.02 329 873.318 316.116 866.148 294.07 865.05 291.5 860.675 280.2 857.438 272.5 831.932 214.494 799.364 167.934 759.024 128.111 714.596 84.254 659.565 49.217 601.5 27.822 563.807 13.932 529.913 6.243 487 1.846 473.883.501 421.742-.041 413 1.076M260.5 141.402c-12.534 3.974-20.923 11.831-25.198 23.598-1.534 4.221-1.922 387.887-.402 397.066.495 2.989 1.439 8.809 2.099 12.934 11.717 73.247 72.379 142.628 145.177 166.044 5.111 1.644 11.606 3.3 23.324 5.947 16.556 3.741 41.824 5.397 60.541 3.969 15.171-1.158 33.587-3.89 39.959-5.928 1.375-.44 4.525-1.354 7-2.032 5.123-1.403 9.586-2.834 12.5-4.008 1.1-.443 3.9-1.514 6.222-2.38 48.559-18.099 98.239-66.565 119.537-116.612 6.385-15.006 11.475-32.359 13.639-46.5.589-3.85 1.528-9.962 2.087-13.582 3.019-19.571.279-60.877-5.461-82.328-10.235-38.245-27.945-68.212-58.004-98.147-38.296-38.138-81.132-57.918-135.192-62.428-17.617-1.469-51.576-1.243-58.399.389-15.824 3.785-25.81 14.373-28.965 30.711-2.295 11.884 2.083 25.71 11.036 34.855 9.29 9.489 15.819 10.948 49.201 10.994 14.135.02 28.085.495 31 1.055 12.756 2.453 16.738 3.406 23.799 5.698 38.947 12.642 74.172 47.137 86.833 85.033 2.825 8.456 3.645 11.475 6.31 23.25 1.713 7.567 1.668 40.472-.067 49.5-6.594 34.301-22.211 60.793-49.581 84.106-24.842 21.16-53.629 31.36-88.495 31.358-15.953-.001-24.933-1.237-42-5.783-28.38-7.558-61.316-33.659-78.759-62.415-4.626-7.626-10.241-19.141-10.241-21.003 0-.75-.358-1.79-.796-2.313-1.026-1.225-2.695-6.509-4.249-13.45-.677-3.025-1.717-7.075-2.311-9-.749-2.429-1.243-62.873-1.612-197.5L310.5 168.5l-2.23-5.5c-4.046-9.982-11.279-16.668-22.558-20.853-6.664-2.473-18.647-2.827-25.212-.745"/></svg>
+        <b style="font-family:var(--disp)">Dalila<i style="color:var(--y);font-style:normal">.</i></b>
+      </div>
+      <div class="cols">
+        <a href="#agentes">Agentes</a><a href="#capacidades">Capacidades</a>
+        <a href="#simulador">Simulador</a><a href="#fluxo">Fluxo</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Blips · Apresentação interna — Dalila SDR de IA</span>
+      <span>Especialistas em (a)creditar · Feito no Brasil</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- nav scrolled ---------- */
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
+
+/* ---------- neural background ---------- */
+(function(){
+  const c=document.getElementById('neural'),x=c.getContext('2d');
+  let w,h,pts,mouse={x:-999,y:-999};
+  function size(){w=c.width=innerWidth;h=c.height=innerHeight;
+    const n=Math.min(90,Math.floor(w*h/16000));
+    pts=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,
+      vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35}));}
+  size();addEventListener('resize',size);
+  addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+  addEventListener('mouseout',()=>{mouse.x=mouse.y=-999});
+  function frame(){
+    x.clearRect(0,0,w,h);
+    for(const p of pts){
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;
+      const dm=Math.hypot(p.x-mouse.x,p.y-mouse.y);
+      if(dm<140){const f=(140-dm)/140;p.x+=(p.x-mouse.x)/dm*f*1.4;p.y+=(p.y-mouse.y)/dm*f*1.4;}
+    }
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<130){x.strokeStyle='rgba(252,186,40,'+(1-d/130)*.16+')';x.lineWidth=1;
+          x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();}
+      }
+    }
+    for(const p of pts){const near=Math.hypot(p.x-mouse.x,p.y-mouse.y)<140;
+      x.fillStyle=near?'rgba(252,186,40,.9)':'rgba(255,255,255,.32)';
+      x.beginPath();x.arc(p.x,p.y,near?2.4:1.6,0,7);x.fill();}
+    requestAnimationFrame(frame);
+  }
+  if(!RM)frame(); else {x.fillStyle='rgba(255,255,255,.15)';}
+})();
+
+/* ---------- typing chat ---------- */
+(function(){
+  const body=document.getElementById('termBody');
+  const script=[
+    {t:'sys',x:'novo lead · segmento Confecção'},
+    {t:'them',x:'Oi! 👋 Vi que você tem interesse nos nossos equipamentos. Você já tem ateliê montado ou está começando agora?',d:1400},
+    {t:'me',x:'Já tenho, quero aumentar a produção',d:900},
+    {t:'them',x:'Que ótimo! Pra montar a melhor condição pra você, me passa o CNPJ do ateliê?',d:1500},
+    {t:'me',x:'12.345.678/0001-90',d:900},
+    {t:'sys',x:'analisando crédito · CNPJ ativo ✓'},
+    {t:'them',x:'Perfeito! Seu crédito está pré-aprovado. 🎉',d:1400},
+    {t:'sys',x:'lead score 4/5 · qualificação N2'},
+    {t:'them',x:'Já estou te passando pro nosso especialista fechar os detalhes. Foi um prazer! 😊',d:1500},
+    {t:'sys',x:'transbordo → vendedor · card aberto'}
+  ];
+  let timers=[];
+  function typing(){const el=document.createElement('div');el.className='typing';
+    el.innerHTML='<i></i><i></i><i></i>';body.appendChild(el);return el;}
+  function run(){
+    timers.forEach(clearTimeout);timers=[];body.innerHTML='';
+    let delay=400;
+    script.forEach((m)=>{
+      if(m.t==='them'&&!RM){
+        timers.push(setTimeout(()=>{const tp=typing();
+          timers.push(setTimeout(()=>{tp.remove();add(m);},Math.min(m.d||1000,1400)));},delay));
+        delay+=(m.d||1000)+400;
+      }else{
+        timers.push(setTimeout(()=>add(m),delay));
+        delay+=(m.d||700);
+      }
+    });
+    timers.push(setTimeout(()=>{const b=document.createElement('button');
+      b.className='replay';b.textContent='↺ repetir conversa';b.onclick=run;body.appendChild(b);
+      body.scrollTop=body.scrollHeight;},delay+300));
+  }
+  function add(m){const el=document.createElement('div');el.className='msg '+m.t;el.textContent=m.x;
+    body.appendChild(el);body.scrollTop=body.scrollHeight;}
+  // start when visible
+  new IntersectionObserver((es,o)=>{es.forEach(e=>{if(e.isIntersecting){run();o.disconnect();}})},{threshold:.3})
+    .observe(document.getElementById('term'));
+})();
+
+/* ---------- count up ---------- */
+(function(){
+  const els=document.querySelectorAll('[data-count]');
+  const io=new IntersectionObserver((es,o)=>{es.forEach(e=>{if(!e.isIntersecting)return;
+    const el=e.target,end=+el.dataset.count;let s=0,t0=null;
+    function step(t){if(!t0)t0=t;const p=Math.min((t-t0)/1100,1);
+      el.textContent=Math.round((1-Math.pow(1-p,3))*end);if(p<1)requestAnimationFrame(step);}
+    if(RM)el.textContent=end; else requestAnimationFrame(step);o.unobserve(el);});},{threshold:.6});
+  els.forEach(e=>io.observe(e));
+})();
+
+/* ---------- orchestration graph ---------- */
+(function(){
+  const svg=document.getElementById('orch');
+  const NS='http://www.w3.org/2000/svg';
+  const cx=320,cy=250, R=170;
+  const agents=[
+    {id:'plan',ab:'P',role:'Planejamento',name:'Agente Planejador',
+      desc:'Estrutura o raciocínio do atendimento e define a melhor estratégia de abordagem para cada perfil de lead.',ang:-140},
+    {id:'com',ab:'C',role:'Comercial',name:'Condições Comerciais',
+      desc:'Cuida de crédito, parcelamento, entrada e planos de pagamento — montando a oferta certa para cada caso.',ang:-40},
+    {id:'score',ab:'Q',role:'Qualificação',name:'Agente de Lead Score',
+      desc:'Pontua o lead de 0 a 5, classifica em N1/N2/N3 e é o único que carimba a oportunidade como ganha.',ang:40},
+    {id:'esp',ab:'E',role:'Conhecimento',name:'Especialistas de Segmento',
+      desc:'12 especialistas — do artesanato ao food — que trazem o conhecimento certo de cada mercado para a conversa.',ang:140}
+  ];
+  const core={role:'Núcleo',name:'Dalila · Orquestradora',
+    desc:'Rege a conversa inteira: decide qual agente acionar em cada etapa, mantém o contexto e executa o transbordo para o vendedor ou SDR humano no momento certo.'};
+  function pos(a){return{x:cx+Math.cos(a*Math.PI/180)*R,y:cy+Math.sin(a*Math.PI/180)*R};}
+  const packets=[];
+  agents.forEach(a=>{const p=pos(a.ang);a.px=p.x;a.py=p.y;
+    // edge
+    const l=document.createElementNS(NS,'line');
+    l.setAttribute('x1',cx);l.setAttribute('y1',cy);l.setAttribute('x2',a.px);l.setAttribute('y2',a.py);
+    l.setAttribute('stroke','rgba(252,186,40,.22)');l.setAttribute('stroke-width','1.5');
+    l.dataset.id=a.id;svg.appendChild(l);a.edge=l;
+    // packet
+    const pk=document.createElementNS(NS,'circle');pk.setAttribute('r','3.5');
+    pk.setAttribute('fill','#FCBA28');pk.style.filter='drop-shadow(0 0 5px rgba(252,186,40,.9))';
+    svg.appendChild(pk);packets.push({el:pk,a,t:Math.random(),dir:1,speed:.006+Math.random()*.004});
+  });
+  // core glow ring
+  const ring=document.createElementNS(NS,'circle');
+  ring.setAttribute('cx',cx);ring.setAttribute('cy',cy);ring.setAttribute('r','58');
+  ring.setAttribute('fill','none');ring.setAttribute('stroke','rgba(252,186,40,.35)');ring.setAttribute('stroke-width','1.5');
+  svg.appendChild(ring);
+  const pulse=document.createElementNS(NS,'circle');
+  pulse.setAttribute('cx',cx);pulse.setAttribute('cy',cy);pulse.setAttribute('fill','none');
+  pulse.setAttribute('stroke','rgba(252,186,40,.5)');pulse.setAttribute('stroke-width','1.5');svg.appendChild(pulse);
+  // agent nodes
+  function node(x,y,r,fill,txt,cls,data){
+    const g=document.createElementNS(NS,'g');g.setAttribute('class',cls);if(data)g.dataset.id=data;
+    const c=document.createElementNS(NS,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',r);
+    c.setAttribute('fill',fill);c.setAttribute('stroke','rgba(252,186,40,.5)');c.setAttribute('stroke-width','1.5');
+    const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',y+1);
+    t.setAttribute('text-anchor','middle');t.setAttribute('dominant-baseline','middle');
+    t.setAttribute('font-family','JetBrains Mono,monospace');t.setAttribute('font-weight','700');
+    t.setAttribute('font-size',r>40?'26':'18');t.setAttribute('fill',r>40?'#000':'#FCBA28');t.textContent=txt;
+    g.appendChild(c);g.appendChild(t);svg.appendChild(g);return{g,c,t};
+  }
+  agents.forEach(a=>{const n=node(a.px,a.py,30,'#141419',a.ab,'node-hit',a.id);a.node=n;
+    const lbl=document.createElementNS(NS,'text');lbl.setAttribute('x',a.px);lbl.setAttribute('y',a.py+48);
+    lbl.setAttribute('text-anchor','middle');lbl.setAttribute('fill','#9a9aa4');
+    lbl.setAttribute('font-family','JetBrains Mono,monospace');lbl.setAttribute('font-size','11');lbl.textContent=a.role;
+    svg.appendChild(lbl);
+  });
+  const coreNode=node(cx,cy,50,'#FCBA28','D','node-hit','core');
+
+  // info panel
+  const elRole=document.getElementById('aiRole'),elName=document.getElementById('aiName'),elDesc=document.getElementById('aiDesc');
+  const legend=document.getElementById('legend');
+  function show(a){elRole.textContent=a.role;elName.textContent=a.name;elDesc.textContent=a.desc;
+    agents.forEach(g=>{g.edge.setAttribute('stroke','rgba(252,186,40,.22)');g.edge.setAttribute('stroke-width','1.5');
+      g.node.c.setAttribute('stroke','rgba(252,186,40,.5)');});
+    [...legend.children].forEach(b=>b.classList.remove('on'));
+    if(a.id&&a.id!=='core'){a.edge.setAttribute('stroke','rgba(252,186,40,.85)');a.edge.setAttribute('stroke-width','2.5');
+      a.node.c.setAttribute('stroke','#FCBA28');a.node.c.setAttribute('stroke-width','3');}
+    const btn=[...legend.children].find(b=>b.dataset.id===(a.id||'core'));if(btn)btn.classList.add('on');
+  }
+  // legend buttons
+  [core,...agents].forEach((a,i)=>{const b=document.createElement('button');
+    b.textContent=i===0?'Orquestradora':a.role;b.dataset.id=a.id||'core';
+    b.onclick=()=>show(i===0?{...core,id:'core'}:a);legend.appendChild(b);});
+  // node clicks
+  agents.forEach(a=>{a.node.g.style.cursor='pointer';
+    a.node.g.addEventListener('mouseenter',()=>show(a));
+    a.node.g.addEventListener('click',()=>show(a));});
+  coreNode.g.style.cursor='pointer';
+  coreNode.g.addEventListener('click',()=>show({...core,id:'core'}));
+  coreNode.g.addEventListener('mouseenter',()=>show({...core,id:'core'}));
+
+  // animate packets + pulse ring
+  let pr=58,pop=.5;
+  function anim(){
+    packets.forEach(p=>{p.t+=p.speed*p.dir;if(p.t>1){p.t=1;p.dir=-1;}if(p.t<0){p.t=0;p.dir=1;}
+      const x=cx+(p.a.px-cx)*p.t,y=cy+(p.a.py-cy)*p.t;
+      p.el.setAttribute('cx',x);p.el.setAttribute('cy',y);});
+    pr+=.5;pop-=.006;if(pr>92){pr=58;pop=.5;}
+    pulse.setAttribute('r',pr);pulse.setAttribute('stroke','rgba(252,186,40,'+Math.max(pop,0)+')');
+    requestAnimationFrame(anim);
+  }
+  if(!RM)anim();
+})();
+
+/* ---------- score simulator ---------- */
+(function(){
+  const rows=[...document.querySelectorAll('#crit .row')];
+  const arc=document.getElementById('arc'),num=document.getElementById('scoreNum');
+  const cls=document.getElementById('scoreCls'),act=document.getElementById('scoreAct');
+  const CIRC=603;
+  function update(){
+    const s=rows.filter(r=>r.classList.contains('on')).length;
+    arc.style.strokeDashoffset=CIRC-(CIRC*s/5);
+    num.textContent=s;
+    let c,a,color;
+    if(s<=1){c='Sem qualificação';a='Dalila segue nutrindo o lead';color='var(--faint)';}
+    else if(s===2){c='N1 · frio';a='Dalila continua investigando';color='#9a9aa4';}
+    else if(s===3){c='N2 · morno';a='Rota: qualificar + condição comercial';color='#ffd66b';}
+    else if(s===4){c='N2 · quente';a='Rota: transbordo → vendedor';color='var(--y)';}
+    else{c='N3 · pronto p/ fechar';a='Transbordo imediato → vendedor';color='var(--ok)';}
+    cls.textContent=c;cls.style.color=color;act.textContent=a;
+  }
+  rows.forEach(r=>r.addEventListener('click',()=>{r.classList.toggle('on');update();}));
+  update();
+})();
+
+/* ---------- reveal + bento spotlight ---------- */
+(function(){
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.14});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  document.querySelectorAll('.cell').forEach(c=>c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');
+    c.style.setProperty('--my',(e.clientY-r.top)+'px');}));
+})();
+</script>
