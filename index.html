@@ -27,6 +27,11 @@
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative;z-index:2}
 
   /* animated backdrops */
+  #bgVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-3;
+    filter:saturate(1.05) brightness(.9)}
+  #bgScrim{position:fixed;inset:0;z-index:-2;pointer-events:none;
+    background:linear-gradient(180deg,rgba(7,7,10,.72),rgba(7,7,10,.85) 35%,rgba(7,7,10,.94) 75%,rgba(7,7,10,.98)),
+      radial-gradient(ellipse 70% 55% at 50% 0%,rgba(7,7,10,.3),transparent 60%)}
   #neural{position:fixed;inset:0;z-index:0;pointer-events:none}
   .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
     background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
@@ -220,6 +225,10 @@
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 </style>
 
+<video id="bgVideo" autoplay muted loop playsinline preload="auto">
+  <source src="assets/dalila-bg.mp4" type="video/mp4">
+</video>
+<div id="bgScrim"></div>
 <canvas id="neural"></canvas>
 <div class="bg-grid"></div>
 <div class="glow-blob blob-a"></div>
