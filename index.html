@@ -46,6 +46,8 @@
   .eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--y);
     box-shadow:0 0 12px 2px var(--y-glow);animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes cineIn{from{opacity:0;transform:translateY(16px);filter:blur(5px)}to{opacity:1;transform:none;filter:blur(0)}}
+  .hero-copy .rw{display:inline-block}
 
   .btn{display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;
     padding:13px 24px;border-radius:12px;cursor:pointer;border:1px solid transparent;
@@ -277,7 +279,7 @@
 <!-- HERO -->
 <section class="hero">
   <div class="wrap hero-grid">
-    <div>
+    <div class="hero-copy">
       <span class="eyebrow">Sistema multiagente · SDR de IA</span>
       <h1>A <span class="iw" tabindex="0" data-tip="Atende sozinha, do primeiro oi ao transbordo — sem depender de um humano online.">vendedora de IA<span class="spark"></span></span> que <span class="iw grad" tabindex="0" data-tip="Online 24 horas por dia, 7 dias por semana. Sem fila, sem pausa, sem fuso horário.">nunca dorme<span class="spark"></span></span> e <span class="iw" tabindex="0" data-tip="Responde no primeiro segundo — antes que o lead esfrie ou vá pro concorrente.">nunca perde um lead<span class="spark"></span></span>.</h1>
       <p class="lead">A Dalila atende, investiga, analisa crédito, monta a condição comercial e transborda o lead qualificado — em segundos, dentro do WhatsApp, 24 horas por dia.</p>
@@ -507,6 +509,52 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
     requestAnimationFrame(frame);
   }
   if(!RM)frame(); else {x.fillStyle='rgba(255,255,255,.15)';}
+})();
+
+/* ---------- cinematic headline reveal ---------- */
+(function(){
+  const heroCopy=document.querySelector('.hero-copy');
+  if(!heroCopy)return;
+  const eyebrow=heroCopy.querySelector('.eyebrow');
+  const h1=heroCopy.querySelector('h1');
+  const lead=heroCopy.querySelector('.lead');
+  const ctaRow=heroCopy.querySelector('.cta-row');
+  const metrics=heroCopy.querySelector('.metrics');
+
+  function cine(el,delay,dur){
+    if(!el)return;
+    if(RM){el.style.opacity='1';return;}
+    el.style.opacity='0';
+    el.style.animation='cineIn '+(dur||.85)+'s cubic-bezier(.22,1,.36,1) '+delay+'s both';
+  }
+
+  const EYEBROW_START=2.2, H1_START=2.6, STEP=.09;
+  cine(eyebrow,EYEBROW_START);
+
+  let count=0;
+  const nodes=[...h1.childNodes];
+  const frag=document.createDocumentFragment();
+  nodes.forEach(node=>{
+    if(node.nodeType===3){
+      node.textContent.split(/(\s+)/).forEach(p=>{
+        if(p==='')return;
+        if(/^\s+$/.test(p)){frag.appendChild(document.createTextNode(p));return;}
+        const span=document.createElement('span');
+        span.className='rw';span.textContent=p;
+        cine(span,H1_START+count*STEP,.6);
+        count++;frag.appendChild(span);
+      });
+    }else{
+      cine(node,H1_START+count*STEP,.6);
+      count++;frag.appendChild(node);
+    }
+  });
+  h1.innerHTML='';h1.appendChild(frag);
+
+  const afterH1=H1_START+count*STEP+.6+.25;
+  cine(lead,afterH1);
+  cine(ctaRow,afterH1+.45);
+  cine(metrics,afterH1+.8);
 })();
 
 /* ---------- typing chat ---------- */
